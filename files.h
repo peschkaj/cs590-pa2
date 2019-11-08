@@ -14,9 +14,15 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#pragma once
+
+#ifndef FILES_H_
+#define FILES_H_
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "pgm.h"
+
 
 // read a file into a buffer
 int
@@ -89,3 +95,5 @@ write_file(char* restrict dest, unsigned char* restrict buf, size_t buf_sz) {
 
   return written;
 }
+
+#endif
