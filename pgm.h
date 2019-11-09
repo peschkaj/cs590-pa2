@@ -79,9 +79,9 @@ pgm_read_body(FILE* fp, pgm_file* f) {
     return -1;
   }
 
-  // use strtok to split into buffers and store in f
-  f->bytes = (byte*)strtok(buf, "\n");
-
+  // TODO create a function to parse this into a macroblock
+  f->bytes = (byte*)strdup(buf);
+  
   return 0;
 }
 
