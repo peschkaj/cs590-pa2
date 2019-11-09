@@ -24,7 +24,6 @@ int
 pgm_read_header(FILE* fp, pgm_file* f) {
   char* buf;
   size_t len = 0;
-  ssize_t read;
 
   
   // first line
@@ -39,9 +38,11 @@ pgm_read_header(FILE* fp, pgm_file* f) {
 
   // split the string and fill the pgm_header
   char token[] = " ";
+
   const char* bits = strtok(buf, token);
-  f->header.xsize = atoi((const char*)bits[0]);
-  f->header.ysize = atoi((const char*)bits[1]);
+  f->header.xsize = atoi((const char*)bits);
+  bits = strtok(buf, token);
+  f->header.ysize = atoi((const char*)bits);
 
   // third line
   // we read the third line of the header so that the file pointer is now
@@ -49,6 +50,8 @@ pgm_read_header(FILE* fp, pgm_file* f) {
   if(getline(&buf, &len, fp) == -1) {
     return -1;
   }
+
+  return 0;
 }
 
 int
@@ -69,7 +72,7 @@ pgm_read_body(FILE* fp, pgm_file* f) {
   char* buf = (char*)malloc(to_read);
 
   // read the entire file into the buffer
-  size_t l = fread(buf, sizeof(byte), to_read, fp);
+  fread(buf, sizeof(byte), to_read, fp);
 
   if (ferror(fp) != 0) {
     free(buf);
@@ -91,5 +94,7 @@ pgm_read_file(FILE* fp, pgm_file* f) {
   if (pgm_read_body(fp, f) < 0) {
     return - 1;
   }
+
+  return 0;
 }
 #endif

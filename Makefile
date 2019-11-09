@@ -5,6 +5,6 @@ clean:
 	rm -f cjpg
 
 cjpg:
-	$(CC) $(CCFLAGS) -o cjpg cjpg.cjpg
+	$(CC) $(CCFLAGS) -o cjpg cjpg.c
 
 .PHONY: clean cjpg
