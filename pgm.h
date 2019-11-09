@@ -7,8 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-typedef unsigned char byte;
+#include "byte.h"
 
 typedef struct {
   uint32_t xsize;
@@ -79,8 +78,10 @@ pgm_read_body(FILE* fp, pgm_file* f) {
     return -1;
   }
 
-  // TODO create a function to parse this into a macroblock
+  // TODO create a function to parse the body into macroblocks
   f->bytes = (byte*)strdup(buf);
+
+  free(buf);
   
   return 0;
 }
