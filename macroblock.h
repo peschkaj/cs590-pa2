@@ -5,8 +5,11 @@
 
 #include "byte.h"
 
+#define MACROBLOCK_SIZE 16
+#define BLOCK_SIZE 8
+
 typedef struct {
-  byte bytes[8][8];
+  byte bytes[BLOCK_SIZE][BLOCK_SIZE];
 } block;
 
 typedef struct {
