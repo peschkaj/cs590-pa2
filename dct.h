@@ -13,7 +13,7 @@
 
 
 void
-dct_write_body(FILE* restrict fp, dct_file* restrict pg) {
+dct_write_body(FILE* restrict fp, pgm_file* restrict pg) {
   // Apply the DCT function to each macro block or something
 }
 
