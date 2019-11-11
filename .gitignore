@@ -58,6 +58,7 @@ GTAGS
 
 ## Output binaries
 cjpg
+mydct
 
 *.lz
 *.un
