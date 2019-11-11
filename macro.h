@@ -25,3 +25,10 @@
       if (DEBUG) printf("%s\t%d\t" fmt, __func__, __LINE__, __VA_ARGS__); \
     } while (0);                                                          \
   })
+
+#define debug_printf(x)    \
+  ({                       \
+    do {                   \
+      if (DEBUG) printf x; \
+    } while (0);           \
+  })
