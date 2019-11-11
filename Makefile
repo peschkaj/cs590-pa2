@@ -1,5 +1,5 @@
 CC = gcc
-CCFLAGS = --std=gnu11 -g -Wall -Wextra
+CCFLAGS = -m64 -march=native --std=gnu11 -g -Wall -Wextra
 
 clean:
 	rm -f cjpg
