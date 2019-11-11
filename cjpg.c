@@ -15,9 +15,13 @@ main(int argc, char const *argv[])
 
   pgm_file pg;
 
-  pgm_read_header(fp, &pg);
+  if (pgm_read_file(fp, &pg) == 0) {
+    printf("file is %d x %d\n", pg.header.xsize, pg.header.ysize);
+  } else {
+    printf("Something went horribly wrong.\n");
+  }
 
-  printf("file is %d x %d\n", pg.header.xsize, pg.header.ysize);
+  fclose(fp); 
 
   return 0;
 }
