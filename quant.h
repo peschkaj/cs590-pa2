@@ -9,7 +9,7 @@
 #include "byte.h"
 
 typedef struct {
-  byte quant_factor[8][8];
+  uint32_t quant_factor[8][8];
 } quantization_matrix;
 
 void
