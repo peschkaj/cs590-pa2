@@ -4,9 +4,9 @@ CC = gcc
 CCFLAGS = -m64 -march=native --std=gnu11 -g -Wall -Wextra
 
 clean:
-	rm -f cjpg
+	rm -f mydct
 
 mydct:
-	$(CC) $(CCFLAGS) -o mydct mydct.c
+	$(CC) $(CCFLAGS) -o mydct mydct.c -lm
 
-.PHONY: clean cjpg
+.PHONY: clean mydct
