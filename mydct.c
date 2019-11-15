@@ -26,7 +26,12 @@ main(int argc, char const *argv[])
   // take the pgm file, apply the DCT, and then write to disk
   const char* dest = argv[4];
   fp = fopen(dest, "wb");
-  dct_write_file(fp, &pg);
+
+  double q = 0.0;
+  dct_file df;
+  quantization_matrix qm;
+
+  dct_write_file(fp, q, &qm, &pg, &df);
   fclose(fp);
 
   return 0;
