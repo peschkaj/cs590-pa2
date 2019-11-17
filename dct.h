@@ -17,9 +17,14 @@
 #define ROOT_TWO sqrt(2.0)
 #define RECIP_ROOT_TWO (1 / ROOT_TWO)
 #define clamp(x, upper, lower) ({ x > 0 ? min(upper, x) : max(lower, x); })
+#define pi M_PI
 
 typedef struct {
   int32_t dcts[BLOCK_SIZE][BLOCK_SIZE];
+} dct_block;
+
+typedef struct {
+  dct_block blocks[2][2];
 } dct_macroblock;
 
 typedef struct {
@@ -33,64 +38,59 @@ typedef struct {
   dct_macroblock** macroblocks;
 } dct_file;
 
+typedef struct {
+  uint32_t x;
+  uint32_t y;
+} dct_order;
 
+int order[64][2] = {
+  {0, 0}, {0, 1}, {1, 0}, {2, 0}, {1, 1}, {0, 2}, {0, 3}, {2, 1},  //  7
+  {1, 2}, {3, 0}, {4, 0}, {3, 1}, {2, 2}, {1, 3}, {0, 4}, {0, 5},  // 15
+  {1, 4}, {2, 3}, {3, 2}, {4, 1}, {5, 0}, {6, 0}, {5, 1}, {4, 2},  // 23
+  {3, 3}, {2, 4}, {1, 5}, {0, 6}, {0, 7}, {1, 6}, {2, 5}, {3, 4},  // 31
+  {4, 3}, {5, 2}, {6, 1}, {7, 0}, {1, 7}, {2, 6}, {3, 5}, {4, 4},  // 39
+  {5, 3}, {6, 2}, {7, 1}, {2, 7}, {3, 6}, {4, 5}, {5, 4}, {6, 3},  // 47
+  {7, 2}, {7, 3}, {6, 4}, {5, 5}, {4, 6}, {3, 7}, {4, 7}, {5, 6},  // 55
+  {6, 5}, {7, 4}, {7, 5}, {6, 6}, {5, 7}, {6, 7}, {7, 6}, {7, 7}   // 63
+};
 
-void
+static void
 dct_process_macroblock(double q, quantization_matrix* restrict qm,
                        macroblock* src_mb, dct_macroblock* dest_mb) {
   for (uint32_t i = 0; i < MACROBLOCK_ROWS; i++) {
     for (uint32_t j = 0; j < MACROBLOCK_COLS; j++) {
-      double sum = 0.0;
+      // process each block
       block* src_b = &src_mb->blocks[i][j];
+      dct_block* dest_b = &dest_mb->blocks[i][j];
 
-      for (uint32_t x = 0; x < BLOCK_SIZE; x++) {
-        for (uint32_t y = 0; y < BLOCK_SIZE; y++) {
-          sum += cos((((2.0 * x) + 1.0) * (x * M_PI)) / (16.0)) *
-                 cos((((2.0 * y) + 1.0) * (y * M_PI)) / (16.0)) *
-                 src_b->bytes[x][y];
-        }
-      }
+      for (uint32_t l = 0; l < BLOCK_SIZE; l++) {
+        for (uint32_t m = 0; m < BLOCK_SIZE; m++) {
+          double sum = 0.0;
 
-      double ci = (i == 0) ? RECIP_ROOT_TWO : 1;
-      double cj = (j == 0) ? RECIP_ROOT_TWO : 1;
-      double dct = clamp(((sum * ci * cj) / (4.0 * q * qm->quant_factor[i][i])),
-                         128.0, -128.0);
-      dct += 127;
-
-      // not sure where the result of the DCT should go...
-      //dest_mb->blocks[i][j]
-    }
-  }
-
-  /* some potentially bad DCT code
-      for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-          double sum = 0;
-          for (int y = 0; y < N; y++) {
-            for (int x = 0; x < N; x++) {
-              sum += cos(((2.0 * x + 1) * i * pi) / (2 * N)) *
-                     cos(((2.0 * y + 1) * j * pi) / (2 * N)) *
-                     pixels[y + yOffset][x + xOffset];
+          for (uint32_t x = 0; x < BLOCK_SIZE; x++) {
+            for (uint32_t y = 0; y < BLOCK_SIZE; y++) {
+              sum += cos((((2.0 * x) + 1.0) * (x * pi)) / (16.0)) *
+                     cos((((2.0 * y) + 1.0) * (y * pi)) / (16.0)) *
+                     src_b->bytes[x][y];
             }
           }
-          double cI = (i == 0) ? 0.70710678 : 1;
-          double cJ = (j == 0) ? 0.70710678 : 1;
-          double dct = (sum * cI * cJ / (4 * (quantMatrix[i][j] * qscale)));
-          if (dct > 128) {
-            dct = 128;
-          } else if (dct < -127) {
-            dct = -127;
-          }
-          dct += 127;
-          int rDct = round(dct);
-          printf("%12f, %5i", dct, rDct);
+
+          double ci = (i == 0) ? RECIP_ROOT_TWO : 1;
+          double cj = (j == 0) ? RECIP_ROOT_TWO : 1;
+          double dct =
+              clamp(((sum * ci * cj) / (4.0 * q * qm->quant_factor[i][i])),
+                    128.0, -128.0);
+          dct += 127.0;
+
+          dest_b->dcts[l][m] = round(dct);
         }
-        printf("\n");
       }
-      */
+    }
+  }
 }
 
-void
+
+static void
 dct_process_macroblocks(double q, quantization_matrix* restrict qm,
                         pgm_file* restrict pf, dct_file* restrict df) {
   uint32_t width = df->header.xsize;
@@ -104,12 +104,10 @@ dct_process_macroblocks(double q, quantization_matrix* restrict qm,
 
   for (uint32_t x = 0; x < rows; x++) {
     for (uint32_t y = 0; y < cols; y++) {
-      double_t sum = 0;
-
       macroblock* src_mb = &(pf->macroblocks[x][y]);
-      macroblock* dest_mb = &(df->macroblocks[x][y]);
+      dct_macroblock* dest_mb = &(df->macroblocks[x][y]);
 
-      dct_macroblock(q, qm, src_mb, dest_mb);
+      dct_process_macroblock(q, qm, src_mb, dest_mb);
     }
   }
 }
@@ -130,14 +128,14 @@ dct_from_pgm(double q, quantization_matrix* qm, pgm_file* restrict pg,
   uint32_t cols = width / MACROBLOCK_SIZE;
 
   // allocate memory for macroblocks
-  df->macroblocks = (macroblock**)malloc(rows * sizeof(macroblock*));
+  df->macroblocks = (dct_macroblock**)malloc(rows * sizeof(macroblock*));
 
   for (uint32_t i = 0; i < rows; i++) {
-    df->macroblocks[i] = (macroblock*)malloc(cols * sizeof(macroblock));
+    df->macroblocks[i] = (dct_macroblock*)malloc(cols * sizeof(macroblock));
   }
 
   // run DCT on each macroblock
-  dct_macroblocks(q, qm, pg, df);
+  dct_process_macroblocks(q, qm, pg, df);
 }
 
 void
@@ -147,9 +145,9 @@ dct_write_body(FILE* fp, dct_file* restrict df) {
 
 void
 dct_write_header(FILE* fp, dct_file* restrict df) {
-  printf("MYDCT\n");
-  printf("%d %d\n", df->header.xsize, df->header.ysize);
-  printf("%f\n", df->header.qvalue);
+  fprintf(fp, "MYDCT\n");
+  fprintf(fp, "%d %d\n", df->header.xsize, df->header.ysize);
+  fprintf(fp, "%f\n", df->header.qvalue);
 }
 
 void
@@ -159,8 +157,5 @@ dct_write_file(FILE* fp, double q, quantization_matrix* restrict qm,
   dct_write_header(fp, df);
   dct_write_body(fp, df);
 }
-
-
-
 
 #endif
