@@ -1,0 +1,19 @@
+[
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-m64",
+            "-march=native",
+            "--std=gnu11",
+            "-g",
+            "-Wall",
+            "-Wextra",
+            "-o",
+            "mydct",
+            "mydct.c"
+        ],
+        "directory": "/home/erica/Documents/mediaWeb/prog2/cs590-pa2",
+        "file": "mydct.c"
+    }
+]
