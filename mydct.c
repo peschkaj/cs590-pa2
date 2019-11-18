@@ -27,7 +27,7 @@ main(int argc, char const *argv[])
   const char* dest = argv[4];
   fp = fopen(dest, "wb");
 
-  double q = 0.0;
+  double q = atof(argv[3]);
   dct_file df;
   quantization_matrix qm;
 
