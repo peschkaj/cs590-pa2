@@ -11,7 +11,7 @@
 #include "macro.h"
 #include "macroblock.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 typedef struct {
   uint32_t xsize;
@@ -23,18 +23,20 @@ typedef struct {
   macroblock** macroblocks;
 } pgm_file;
 
+// Read relevant header from a file pointer
 static int
 pgm_read_header(FILE* restrict fp, pgm_file* restrict f) {
-  char* buf;
+  char* buf = NULL;
   size_t len = 0;
+  ssize_t read = 0;
 
   // first line
-  if (getline(&buf, &len, fp) == -1) {
+  if ((read = getline(&buf, &len, fp)) == -1) {
     return -1;
   }
 
   // second line
-  if (getline(&buf, &len, fp) == -1) {
+  if ((read = getline(&buf, &len, fp)) == -1) {
     return -1;
   }
 
@@ -49,7 +51,7 @@ pgm_read_header(FILE* restrict fp, pgm_file* restrict f) {
   // third line
   // we read the third line of the header so that the file pointer is now
   // ready for us to read the entire body of the file in one go
-  if (getline(&buf, &len, fp) == -1) {
+  if ((read = getline(&buf, &len, fp)) == -1) {
     return -1;
   }
 
