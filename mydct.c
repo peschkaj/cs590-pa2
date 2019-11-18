@@ -40,17 +40,9 @@ main(int argc, char const *argv[])
   
   const char* dest = argv[4];
   printf("dest is %s\n", dest); 
-  fp = fopen(dest, "w");
-  if(fp == NULL) { 
-	  printf("FILE POINER IS NULL\n"); 
-  }
-  printf("after fopen\n"); 
 
   // take the pgm file, apply the DCT, and then write to disk
-  dct_file df;
-  //Overwriting the file pointer at some point
-  dct_write_file(fp, q, &qm, &pg, &df);
-  fclose(fp);
+  dct_write_file(dest, q, &qm, &pg);
 
   return 0;
 }
