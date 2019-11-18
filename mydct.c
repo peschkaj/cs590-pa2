@@ -31,10 +31,10 @@ main(int argc, char const *argv[])
   // read qscale from command line
   double q = atof(argv[3]);
   dct_file df;
-  
+
   // read quantization matrix from quantfile
   quantization_matrix qm; 
-  read_quant_file(argv[2], &qm);
+  read_quant_file(fp, &qm);
 
   dct_write_file(fp, q, &qm, &pg, &df);
   fclose(fp);
