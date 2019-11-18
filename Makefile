@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := mydct
 
 CC = gcc
-CCFLAGS = -m64 -march=native --std=gnu11 -g -Wall -Wextra
+CCFLAGS = -m64 -march=native --std=gnu11 -Og -g -Wall -Wextra
 
 clean:
 	rm -f mydct
