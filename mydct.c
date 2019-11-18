@@ -24,18 +24,21 @@ main(int argc, char const *argv[])
 
   fclose(fp); 
 
-  // take the pgm file, apply the DCT, and then write to disk
-  const char* dest = argv[4];
-  fp = fopen(dest, "wb");
-
   // read qscale from command line
   double q = atof(argv[3]);
-  dct_file df;
 
   // read quantization matrix from quantfile
   quantization_matrix qm; 
+  fp = fopen(argv[2], "rb");
   read_quant_file(fp, &qm);
+  fclose(fp);
+  
+  // open destination for writing
+  const char* dest = argv[4];
+  fp = fopen(dest, "wb");
 
+  // take the pgm file, apply the DCT, and then write to disk
+  dct_file df;
   dct_write_file(fp, q, &qm, &pg, &df);
   fclose(fp);
 
