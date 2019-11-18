@@ -147,7 +147,12 @@ pgm_read_body(FILE* restrict fp, pgm_file* restrict f) {
   char* buf = (char*)malloc(to_read);
 
   // read the entire file into the buffer
-  fread(buf, sizeof(byte), to_read, fp);
+  ssize_t read = fread(buf, sizeof(byte), to_read, fp);
+
+  if (read == -1) {
+    printf("Unable to read from file in %s\n", __FUNCTION__);
+    exit(-1);
+  }
 
   if (ferror(fp) != 0) {
     free(buf);
