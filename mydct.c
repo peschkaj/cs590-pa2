@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "pgm.h"
 #include "dct.h"
+#include "quant.h"
 
 int 
 main(int argc, char const *argv[]) 
@@ -27,9 +28,13 @@ main(int argc, char const *argv[])
   const char* dest = argv[4];
   fp = fopen(dest, "wb");
 
+  // read qscale from command line
   double q = atof(argv[3]);
   dct_file df;
-  quantization_matrix qm;
+  
+  // read quantization matrix from quantfile
+  quantization_matrix qm; 
+  read_quant_file(argv[2], &qm);
 
   dct_write_file(fp, q, &qm, &pg, &df);
   fclose(fp);
