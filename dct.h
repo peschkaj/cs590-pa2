@@ -63,8 +63,8 @@ dct_process_macroblock(double q, quantization_matrix* restrict qm,
       block* src_b = &src_mb->blocks[i][j];
       dct_block* dest_b = &dest_mb->blocks[i][j];
 
-      for (uint32_t l = 0; l < BLOCK_SIZE; l++) {
-        for (uint32_t m = 0; m < BLOCK_SIZE; m++) {
+      for (uint32_t u = 0; u < BLOCK_SIZE; u++) {
+        for (uint32_t v = 0; v < BLOCK_SIZE; v++) {
           double sum = 0.0;
 
           for (uint32_t x = 0; x < BLOCK_SIZE; x++) {
@@ -78,11 +78,11 @@ dct_process_macroblock(double q, quantization_matrix* restrict qm,
           double ci = (i == 0) ? RECIP_ROOT_TWO : 1;
           double cj = (j == 0) ? RECIP_ROOT_TWO : 1;
           double dct =
-              clamp(((sum * ci * cj) / (4.0 * q * qm->quant_factor[i][i])),
+              clamp(((sum * ci * cj) / (4.0 * q * qm->quant_factor[u][v])),
                     128.0, -128.0);
           dct += 127.0;
 
-          dest_b->dcts[l][m] = round(dct);
+          dest_b->dcts[u][v] = round(dct);
         }
       }
     }
