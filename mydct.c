@@ -12,7 +12,6 @@ main(int argc, char const *argv[])
     exit(1);
   }
 
-  printf("BEIGN\n"); 
   const char* src = argv[1];
   FILE* fp = fopen(src, "rb");
   pgm_file pg;
@@ -30,16 +29,11 @@ main(int argc, char const *argv[])
 
   // read quantization matrix from quantfile
   quantization_matrix qm; 
-  printf("open quant file\n"); 
   fp = fopen(argv[2], "rb");
   read_quant_file(fp, &qm);
   fclose(fp);
-  printf("close quant file\n"); 
-  
-  // open destination for writing
-  
+
   const char* dest = argv[4];
-  printf("dest is %s\n", dest); 
 
   // take the pgm file, apply the DCT, and then write to disk
   dct_write_file(dest, q, &qm, &pg);
