@@ -46,16 +46,8 @@ main(int argc, char const *argv[])
 
   // read quantization matrix from quantfile
   quantization_matrix qm; 
-  fp = fopen(argv[2], "rb");
-  if (fp == NULL) {
-    printf("unable to open '%s'\n", argv[2]);
-    exit(-1);
-  }
-
-  read_quant_file(fp, &qm);
-  printf("first is %d\n", qm.quant_factor[0][0]);
-  fclose(fp);
-
+  read_quant_file(argv[2], &qm);
+  
   const char* dest = argv[4];
 
   // take the pgm file, apply the DCT, and then write to disk
