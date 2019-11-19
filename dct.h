@@ -78,12 +78,14 @@ dct_process_macroblock(double q, quantization_matrix* restrict qm,
       for (uint32_t u = 0; u < BLOCK_SIZE; u++) {
         for (uint32_t v = 0; v < BLOCK_SIZE; v++) {
           double sum = 0.0;
-
+          //printf("----------------\n");
           for (uint32_t x = 0; x < BLOCK_SIZE; x++) {
             for (uint32_t y = 0; y < BLOCK_SIZE; y++) {
-              sum += cos((((2.0 * x) + 1.0) * (x * pi)) / (16.0)) *
-                     cos((((2.0 * y) + 1.0) * (y * pi)) / (16.0)) *
-                     src_b->bytes[x][y];
+              
+              sum += cos((((2.0 * u) + 1.0) * (u * pi)) / (16.0)) *
+                     cos((((2.0 * v) + 1.0) * (v * pi)) / (16.0)) *
+                     src_b->bytes[y][x];
+                     
             }
           }
 
@@ -92,6 +94,7 @@ dct_process_macroblock(double q, quantization_matrix* restrict qm,
           double dct =
               clamp(((sum * ci * cj) / (4.0 * q * qm->quant_factor[u][v])),
                     128.0, -128.0);
+          //debug_printf("q: %f qm: %d sum: %f dct: %f\n", q, qm->quant_factor[u][v], sum, dct);
           dct += 127.0;
 
           dest_b->dcts[u][v] = round(dct);
