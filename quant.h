@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "byte.h"
+#include "file.h"
 #include "macro.h"
 
 typedef struct {
@@ -30,24 +31,44 @@ typedef struct {
 } quantization_matrix;
 
 void
-read_quant_file(FILE* restrict fp, quantization_matrix* restrict qm) {
-  char* buf = NULL;
-  const char token[] = " ";
-  size_t len = 0;
-  uint32_t current_line = 0;
-  ssize_t read = 0;
+read_quant_file(const char* restrict src, quantization_matrix* restrict qm) {
+  unsigned char* buf;
+  
+  int32_t bytes_read = read_file(src, &buf);
 
-  // read each line
-  while ((read = getline(&buf, &len, fp)) == -1) {
-    printf("retrieved line of length: %zu\n", read);
-    char* quants = strtok(buf, token);
-    // assume 8 entries per line
-    for (size_t i = 0; i < 8; i++) {
-      qm->quant_factor[current_line][i] = atoi(&quants[i]);
-      printf("%d:%d %d\t", current_line, (int)i, qm->quant_factor[current_line][i]);
+  if (bytes_read < 0) {
+    printf("Unable to read from '%s'\n", src);
+    exit(-1);
+  }
+
+  // now process buf line by line
+  uint32_t current_line = 0;
+  uint32_t current_value = 0;
+  uint32_t pos = 0;
+  
+  while(*buf != '\0' && current_line < 8) {
+    if (*buf == '\n') {
+      ++buf;
+      current_value = 0;
+      pos = 0;
+      ++current_line;
     }
-    printf("\n");
-    current_line++;
+
+    // remove any spaces
+    while (*buf == ' ') {
+      buf++;
+    }
+
+    // convert digits into numbers
+    while (*buf >= '0' && *buf <= '9') {
+      current_value = (current_value * 10) + (*buf - '0');
+      buf++;
+    }
+
+    qm->quant_factor[current_line][pos] = current_value;
+    current_value = 0;
+    pos++;
+
   }
 }
 
