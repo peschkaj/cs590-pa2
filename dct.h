@@ -82,17 +82,17 @@ dct_process_macroblock(double q, quantization_matrix* restrict qm,
           for (uint32_t x = 0; x < BLOCK_SIZE; x++) {
             for (uint32_t y = 0; y < BLOCK_SIZE; y++) {
               
-              sum += cos((((2.0 * u) + 1.0) * (u * pi)) / (16.0)) *
-                     cos((((2.0 * v) + 1.0) * (v * pi)) / (16.0)) *
-                     src_b->bytes[y][x];
+              sum += cos((((2.0 * x) + 1.0) * (u * pi)) / (16.0)) *
+                     cos((((2.0 * y) + 1.0) * (v * pi)) / (16.0)) *
+                     src_b->bytes[x][y];
                      
             }
           }
 
-          double ci = (i == 0) ? RECIP_ROOT_TWO : 1;
-          double cj = (j == 0) ? RECIP_ROOT_TWO : 1;
+          double cu = (u == 0) ? RECIP_ROOT_TWO : 1;
+          double cv = (v == 0) ? RECIP_ROOT_TWO : 1;
           double dct =
-              clamp(((sum * ci * cj) / (4.0 * q * qm->quant_factor[u][v])),
+              clamp(((sum * cu * cv) / (4.0 * q * qm->quant_factor[u][v])),
                     128.0, -128.0);
           //debug_printf("q: %f qm: %d sum: %f dct: %f\n", q, qm->quant_factor[u][v], sum, dct);
           dct += 127.0;
