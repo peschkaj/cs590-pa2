@@ -224,4 +224,24 @@ dct_write_file(const char* dest, double q, quantization_matrix* restrict qm,
 
   fclose(df.fp);
 }
+
+void
+idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b, block* dest_b){ 
+  // Iterating through the output block so we can inverse the compression
+  for (uint32_t x = 0; x < BLOCK_SIZE; x++) {
+    for (uint32_t y = 0; y < BLOCK_SIZE; y++) {
+      //double sum = 0.0; // temporary value to hold intermediary sum for (x,y) location
+      int32_t ival = src_b->dcts[x][y];
+      ival += 127; //Reset offset
+
+      //Need to multiply by quant value
+      ival = ival * 4.0 * qm->quant_factor[x][y];
+      //Do idct here? 
+
+    }
+  }
+
+
+
+}
 #endif
