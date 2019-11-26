@@ -230,7 +230,7 @@ idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b,
   // Iterating through the output block so we can inverse the compression
   for (uint32_t x = 0; x < BLOCK_SIZE; x++) {
     for (uint32_t y = 0; y < BLOCK_SIZE; y++) {
-
+        double sum = 0.0; 
         //placing result value into src_b->block[x][y]
 
       for (uint32_t u = 0; u < BLOCK_SIZE; u++) {
@@ -239,10 +239,25 @@ idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b,
           ival += 127; //Reset offset
 
           //Need to multiply by quant value
-          ival = ival * 4.0 * qm->quant_factor[u][v];
+          ival = ival * 4.0 * qm->quant_factor[u][v] * q;
           //Do idct here now that we have reconstructed value? 
+	  //ival == F(u,v)
+
+	  
+	  // Getting Cu Cv values
+          double cu = (u == 0) ? RECIP_ROOT_TWO : 1;
+          double cv = (v == 0) ? RECIP_ROOT_TWO : 1;
+
+	  ival = ival * cu * cv; 
+          sum += cos((((2.0 * x) + 1.0) * (u * pi)) / (16.0)) *
+                 cos((((2.0 * y) + 1.0) * (v * pi)) / (16.0)) * 
+		 ival; 
 	}
       }
+
+    sum = sum / 4; 
+    double oval = clamp(sum, 255, 0); 
+    dest_b->bytes[x][y] = round(oval); 
     }
   }
 
