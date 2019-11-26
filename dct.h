@@ -248,10 +248,10 @@ idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b,
           double cu = (u == 0) ? RECIP_ROOT_TWO : 1;
           double cv = (v == 0) ? RECIP_ROOT_TWO : 1;
 
-	  ival = ival * cu * cv; 
+	  double tval = ival * cu * cv; 
           sum += cos((((2.0 * x) + 1.0) * (u * pi)) / (16.0)) *
                  cos((((2.0 * y) + 1.0) * (v * pi)) / (16.0)) * 
-		 ival; 
+		 tval; 
 	}
       }
 
