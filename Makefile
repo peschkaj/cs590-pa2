@@ -1,4 +1,4 @@
-.DEFAULT_GOAL := mydct
+.DEFAULT_GOAL := all
 
 CC = gcc
 CCFLAGS = -m64 -march=native --std=gnu11 -Og -g -Wall -Wextra
@@ -6,7 +6,12 @@ CCFLAGS = -m64 -march=native --std=gnu11 -Og -g -Wall -Wextra
 clean:
 	rm -f mydct
 
-mydct:
-	$(CC) $(CCFLAGS) -o mydct mydct.c -lm
+all: mydct myidct
 
-.PHONY: clean mydct
+mydct:
+	$(CC) $(CCFLAGS) -o myDCT mydct.c -lm
+
+myidct:
+	$(CC) $(CCFLAGS) -o myIDCT myidct.c -lm
+
+.PHONY: clean mydct myidct

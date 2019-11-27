@@ -352,26 +352,28 @@ dct_read_body(dct_file* restrict df) {
 }
 
 // Read from src into df.
-void
+int
 dct_read_file(const char* src, dct_file* df) {
   df->fp = fopen(src, "rb");
 
   if (!df->fp) {
     printf("Unable to open '%s'\n", src);
-    exit(-1);
+    return -1;
   }
 
   if (dct_read_header(df) == -1) {
     printf("Unable to read DCT header from '%s'\n", src);
-    exit(-1);
+    return -1;
   }
 
   if (dct_read_body(df) == -1) {
     printf("Unable to read DCT body from '%s'\n", src);
-    exit(-1);
+    return -1;
   }
 
   fclose(df->fp);
+
+  return 0;
 }
 
 void

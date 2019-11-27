@@ -31,16 +31,13 @@ main(int argc, char const *argv[])
   }
 
   const char* src = argv[1];
-  FILE* fp = fopen(src, "rb");
   dct_file df;
 
-  if (dct_read_file(fp, &df) == 0) {
+  if (dct_read_file(src, &df) == 0) {
     printf("file is %d x %d\n", df.header.xsize, df.header.ysize);
   } else {
     printf("Something went horribly wrong.\n");
   }
-
-  fclose(fp); 
 
   // read quantization matrix from quantfile
   quantization_matrix qm; 
