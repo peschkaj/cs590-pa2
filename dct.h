@@ -264,4 +264,20 @@ idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b,
 
 
 }
+
+void
+idct_process_macroblock(double q, quantization_matrix* restrict qm, dct_macroblock* src_mb, macroblock* dest_mb) {
+  for (uint32_t i = 0; i < MACROBLOCK_ROWS; i++) {
+    for (uint32_t j = 0; j < MACROBLOCK_COLS; j++) {
+	    dct_block* in_block = &(src_mb->blocks[i][j]);
+	    block* out_block = &(dest_mb->blocks[i][j]);
+	    idct_process_block(q, qm, in_block, out_block);
+    }
+  }
+
+}
+
+static void
+idct_process_macroblocks(double q, quantization_matrix* restrict qm, dct_file *df, pgm_file * pf) {
+}
 #endif
