@@ -35,6 +35,27 @@
 #define clamp(x, upper, lower) ({ x > 0 ? min(upper, x) : max(lower, x); })
 #define pi M_PI
 
+// Set up a swap function specific for uint32_t
+static inline void
+swap_uint32_t(uint32_t* x, uint32_t* y) {
+  uint32_t t = *x;
+  *x = *y;
+  *y = t;
+}
+// A generic byte-by-byte swap
+#define swap_generic(x_,y_) do \
+   { unsigned char swap_temp[sizeof(x_) == sizeof(y_) ? (signed)sizeof(x_) : -1]; \
+     memcpy(swap_temp,&y_,sizeof(x_)); \
+     memcpy(&y_,&x_,      sizeof(x_)); \
+     memcpy(&x_,swap_temp,sizeof(x_)); \
+    } while(0)
+// Use the C11 _Generic macro magic to create a general purpose
+//  swap function
+#define swap(x_, y_) _Generic((x_), \
+  uint32_t: swap_uint32_t(&x_, &y_), \
+  default:  swap_generic(&x_, &y_)   \
+)(x)
+
 typedef struct {
   int32_t dcts[BLOCK_SIZE][BLOCK_SIZE];
 } dct_block;
@@ -44,9 +65,9 @@ typedef struct {
 } dct_macroblock;
 
 typedef struct {
-  uint32_t xsize; // width in pixels
-  uint32_t ysize; // height in pixels
-  double qvalue;  // user supplied q value
+  uint32_t xsize;  // width in pixels
+  uint32_t ysize;  // height in pixels
+  double qvalue;   // user supplied q value
 } dct_header;
 
 typedef struct {
@@ -78,14 +99,12 @@ dct_process_macroblock(double q, quantization_matrix* restrict qm,
       for (uint32_t u = 0; u < BLOCK_SIZE; u++) {
         for (uint32_t v = 0; v < BLOCK_SIZE; v++) {
           double sum = 0.0;
-          //printf("----------------\n");
+          // printf("----------------\n");
           for (uint32_t x = 0; x < BLOCK_SIZE; x++) {
             for (uint32_t y = 0; y < BLOCK_SIZE; y++) {
-              
               sum += cos((((2.0 * x) + 1.0) * (u * pi)) / (16.0)) *
                      cos((((2.0 * y) + 1.0) * (v * pi)) / (16.0)) *
                      src_b->bytes[x][y];
-                     
             }
           }
 
@@ -94,7 +113,8 @@ dct_process_macroblock(double q, quantization_matrix* restrict qm,
           double dct =
               clamp(((sum * cu * cv) / (4.0 * q * qm->quant_factor[u][v])),
                     128.0, -128.0);
-          //debug_printf("q: %f qm: %d sum: %f dct: %f\n", q, qm->quant_factor[u][v], sum, dct);
+          // debug_printf("q: %f qm: %d sum: %f dct: %f\n", q,
+          // qm->quant_factor[u][v], sum, dct);
           dct += 127.0;
 
           dest_b->dcts[u][v] = round(dct);
@@ -153,7 +173,7 @@ dct_from_pgm(double q, quantization_matrix* qm, pgm_file* restrict pg,
   dct_process_macroblocks(q, qm, pg, df);
 }
 
-void
+static void
 dct_write_block(dct_file* df, dct_block* block) {
   // do some shit to write a block
   for (uint32_t i = 0; i < (BLOCK_SIZE * BLOCK_SIZE); ++i) {
@@ -171,8 +191,7 @@ dct_write_block(dct_file* df, dct_block* block) {
   }
 }
 
-
-void
+static void
 dct_write_macroblock(dct_file* df, dct_macroblock* macroblock, uint32_t mb_x,
                      uint32_t mb_y) {
   for (uint32_t i = 0; i < 2; i++) {
@@ -184,7 +203,7 @@ dct_write_macroblock(dct_file* df, dct_macroblock* macroblock, uint32_t mb_x,
   }
 }
 
-void
+static void
 dct_write_body(dct_file* restrict df) {
   // Apply the DCT function to each macro block or something
   uint32_t xsize = df->header.xsize;
@@ -198,7 +217,7 @@ dct_write_body(dct_file* restrict df) {
   }
 }
 
-void
+static void
 dct_write_header(dct_file* df) {
   fprintf(df->fp, "MYDCT\n");
   fprintf(df->fp, "%d %d\n", df->header.xsize, df->header.ysize);
@@ -225,44 +244,171 @@ dct_write_file(const char* dest, double q, quantization_matrix* restrict qm,
   fclose(df.fp);
 }
 
+// Read the DCT header information into the dct_file header
+// returns 0 on success, -1 otherwise
+static int
+dct_read_header(dct_file* df) {
+  char* buf = NULL;
+  size_t len = 0;
+  ssize_t read = 0;
+
+  // first line, should be MYDCT
+  if ((read = getline(&buf, &len, df->fp)) == -1) {
+    return -1;
+  }
+
+  if (strcmp(buf, "MYDCT") != 0) {
+    return -1;
+  }
+
+  // second line is width/height
+  if ((read = getline(&buf, &len, df->fp)) == -1) {
+    return -1;
+  }
+
+  char token[] = "   ";
+
+  const char* bits = strtok(buf, token);
+  df->header.xsize = atoi((const char*)bits);
+  bits = strtok(buf, token);
+  df->header.ysize = atoi((const char*)bits);
+
+  // third line contains the quant factor
+  if ((read = getline(&buf, &len, df->fp)) == -1) {
+    return -1;
+  }
+
+  // we have the quant factor, now parse it from a string to a double
+  df->header.qvalue = atof((const char*)buf);
+
+  return 0;
+}
+
+// Reads in a block from a DCT file. 
+// The expected format is:
+// 0 0
+//   127  127  127  127  127  127  127  127
+//   127  127  127  127  127  127  127  127
+//   127  127  127  127  127  127  127  127
+//   127  127  127  127  127  127  127  127
+//   127  127  127  127  127  127  127  127
+//   127  127  127  127  127  127  127  127
+//   127  127  127  127  127  127  127  127
+//   127  127  127  127  127  127  127  127
+static int
+dct_read_block(FILE* restrict fp, dct_block* restrict b) {
+  // Read the next line from fp assuming it's of the form "x y"
+  uint32_t x, y;
+  if(fscanf(fp, "%d %d", &x, &y) != 2) {
+    return -1;
+  }
+
+  // read the next eight lines from the body
+  for (uint32_t i = 0; i < 8; i++) {
+    if (fscanf(fp, "%d %d %d %d %d %d %d %d", &b->dcts[i][0], &b->dcts[i][1],
+           &b->dcts[i][2], &b->dcts[i][3], &b->dcts[i][4], &b->dcts[i][5],
+           &b->dcts[i][6], &b->dcts[i][7]) != 8) {
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+// Read a macroblock
+// Reads a specific macroblock by reading in each of its four blocks
+static int
+dct_read_macroblock(FILE* restrict fp, dct_macroblock* restrict mb) {
+  for (uint32_t y = 0; y < MACROBLOCK_ROWS; y++) {
+    for (uint32_t x = 0; x < MACROBLOCK_COLS; x++) {
+      if (dct_read_block(fp, &mb->blocks[y][x]) != 0) {
+        return -1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+// Read the body of fp into df.
+// Assumes that dct_read_header has been called first.
+static int
+dct_read_body(dct_file* restrict df) {
+  uint32_t cols = df->header.xsize / MACROBLOCK_SIZE;
+  uint32_t rows = df->header.ysize / MACROBLOCK_SIZE;
+
+  df->macroblocks = (dct_macroblock**)malloc(rows * sizeof(dct_macroblock*));
+
+  for (uint32_t y = 0; y < rows; y++) {
+    for (uint32_t x = 0; x < cols; x++) {
+      df->macroblocks[y] = (dct_macroblock*)malloc(cols * sizeof(dct_macroblock));
+      if (dct_read_macroblock(df->fp, &df->macroblocks[y][x]) == -1) {
+        return -1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+// Read from src into df.
 void
-idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b, block* dest_b){ 
+dct_read_file(const char* src, dct_file* df) {
+  df->fp = fopen(src, "rb");
+
+  if (!df->fp) {
+    printf("Unable to open '%s'\n", src);
+    exit(-1);
+  }
+
+  if (dct_read_header(df) == -1) {
+    printf("Unable to read DCT header from '%s'\n", src);
+    exit(-1);
+  }
+
+  if (dct_read_body(df) == -1) {
+    printf("Unable to read DCT body from '%s'\n", src);
+    exit(-1);
+  }
+
+  fclose(df->fp);
+}
+
+void
+idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b,
+                   block* dest_b) {
   // Iterating through the output block so we can inverse the compression
   for (uint32_t x = 0; x < BLOCK_SIZE; x++) {
     for (uint32_t y = 0; y < BLOCK_SIZE; y++) {
-        double sum = 0.0; 
-        //placing result value into src_b->block[x][y]
+      double sum = 0.0;
+      // placing result value into src_b->block[x][y]
 
       for (uint32_t u = 0; u < BLOCK_SIZE; u++) {
         for (uint32_t v = 0; v < BLOCK_SIZE; v++) {
           int32_t ival = src_b->dcts[u][v];
-          ival += 127; //Reset offset
+          ival += 127;  // Reset offset
 
-          //Need to multiply by quant value
+          // Need to multiply by quant value
           ival = ival * 4.0 * qm->quant_factor[u][v] * q;
-          //Do idct here now that we have reconstructed value? 
-	  //ival == F(u,v)
+          // Do idct here now that we have reconstructed value?
+          // ival == F(u,v)
 
-	  
-	  // Getting Cu Cv values
+
+          // Getting Cu Cv values
           double cu = (u == 0) ? RECIP_ROOT_TWO : 1;
           double cv = (v == 0) ? RECIP_ROOT_TWO : 1;
 
-	  double tval = ival * cu * cv; 
+          double tval = ival * cu * cv;
           sum += cos((((2.0 * x) + 1.0) * (u * pi)) / (16.0)) *
-                 cos((((2.0 * y) + 1.0) * (v * pi)) / (16.0)) * 
-		 tval; 
-	}
+                 cos((((2.0 * y) + 1.0) * (v * pi)) / (16.0)) * tval;
+        }
       }
 
-    sum = sum / 4; 
-    double oval = clamp(sum, 255, 0); 
-    dest_b->bytes[x][y] = round(oval); 
+      sum = sum / 4;
+      double oval = clamp(sum, 255, 0);
+      dest_b->bytes[x][y] = round(oval);
     }
   }
-
-
-
 }
 
 void
