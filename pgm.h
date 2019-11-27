@@ -37,6 +37,7 @@ typedef struct {
 typedef struct {
   pgm_header header;
   macroblock** macroblocks;
+  FILE * fp; 
 } pgm_file;
 
 // Read relevant header from a file pointer
