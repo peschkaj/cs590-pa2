@@ -6,14 +6,33 @@
             "-m64",
             "-march=native",
             "--std=gnu11",
+            "-Og",
             "-g",
             "-Wall",
             "-Wextra",
             "-o",
-            "mydct",
+            "myDCT",
             "mydct.c"
         ],
-        "directory": "/home/erica/Documents/mediaWeb/prog2/cs590-pa2",
+        "directory": "/mnt/c/Users/jeremiah/src/peschkaj/cs590-pa2",
         "file": "mydct.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-m64",
+            "-march=native",
+            "--std=gnu11",
+            "-Og",
+            "-g",
+            "-Wall",
+            "-Wextra",
+            "-o",
+            "myIDCT",
+            "myidct.c"
+        ],
+        "directory": "/mnt/c/Users/jeremiah/src/peschkaj/cs590-pa2",
+        "file": "myidct.c"
     }
 ]
