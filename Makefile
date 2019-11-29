@@ -4,7 +4,7 @@ CC = gcc
 CCFLAGS = -m64 -march=native --std=gnu11 -Og -g -Wall -Wextra
 
 clean:
-	rm -f mydct
+	rm -f myDCT myIDCT
 
 all: mydct myidct
 
