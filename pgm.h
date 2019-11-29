@@ -26,6 +26,7 @@
 #include "byte.h"
 #include "macro.h"
 #include "macroblock.h"
+#include "order.h"
 
 #define DEBUG 0
 
@@ -195,5 +196,59 @@ pgm_read_file(FILE* restrict fp, pgm_file* restrict f) {
   }
 
   return 0;
+}
+
+void
+pgm_write_block(pgm_file* pg, block* block) {
+  for (uint32_t i = 0; i < (BLOCK_SIZE * BLOCK_SIZE); ++i) {
+    fprintf(pg->fp, " ");
+
+    // Use the order array to fine the next position for writing
+    uint32_t y = order[i][0];
+    uint32_t x = order[i][1];
+    fprintf(pg->fp, "%3d", block->bytes[y][x]);
+
+    // print a new line every 8 DCTs
+    if (i % 8 == 7) {
+      fprintf(pg->fp, "\n");
+    }
+  }
+}
+
+void
+pgm_write_macroblock(pgm_file* pg, macroblock* macroblock, uint32_t mb_x, uint32_t mb_y){ 
+  for (uint32_t i = 0; i < 2; i++) {
+    for (uint32_t j = 0; j < 2; j++) {
+      fprintf(pg->fp, "%d %d\n", (mb_x * MACROBLOCK_SIZE + j * BLOCK_SIZE),
+              (mb_y * MACROBLOCK_SIZE + i * BLOCK_SIZE));
+      pgm_write_block(pg, &macroblock->blocks[i][j]);
+    }
+  }
+}
+
+void
+pgm_write_body(pgm_file * pg) { 
+  uint32_t xsize = pg->header.xsize;
+  uint32_t ysize = pg->header.ysize;
+  uint32_t rows = ysize / MACROBLOCK_SIZE;
+  uint32_t cols = xsize / MACROBLOCK_SIZE;
+  for (uint32_t i = 0; i < rows; i++) {
+    for (uint32_t j = 0; j < cols; j++) {
+      pgm_write_macroblock(pg, &(pg->macroblocks[i][j]), i, j);
+    }
+  }
+}
+
+void
+pgm_write_header(pgm_file * pg) { 
+  fprintf(pg->fp, "%s", "P5\n"); 
+  fprintf(pg->fp, "%d %d\n", pg->header.xsize, pg->header.ysize); 
+  fprintf(pg->fp,  "%s", "255\n"); 
+}
+
+void
+pgm_write_file(pgm_file* pg) { 
+  pgm_write_header(pg); 
+  pgm_write_body(pg); 
 }
 #endif

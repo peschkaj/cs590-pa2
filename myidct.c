@@ -44,11 +44,20 @@ main(int argc, char const *argv[])
   read_quant_file(argv[2], &qm);
   
   const char* dest = argv[3];
-  printf("dest: %s", dest); 
+  printf("dest: %s\n", dest); 
+
+  pgm_file pg;
+  dct_to_pgm(&qm, &pg, &df);
+
+  pg.fp = fopen(dest, "wb");
+
+  if (!pg.fp) {
+    printf("Unable to open '%s'\n", dest);
+    exit(-1);
+  }
 
   // take the pgm file, apply the DCT, and then write to disk
-  idct_write_file(dest, &qm, &df);
-  //idct_write_file(const char *dest, quantization_matrix *restrict qm, dct_file *df)
+  pgm_write_file(&pg);
 
   return 0;
 }

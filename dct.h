@@ -27,6 +27,7 @@
 #include "byte.h"
 #include "macro.h"
 #include "macroblock.h"
+#include "order.h"
 #include "pgm.h"
 #include "quant.h"
 
@@ -76,16 +77,6 @@ typedef struct {
   dct_macroblock** macroblocks;
 } dct_file;
 
-int order[64][2] = {
-    {0, 0}, {0, 1}, {1, 0}, {2, 0}, {1, 1}, {0, 2}, {0, 3}, {2, 1},  //  7
-    {1, 2}, {3, 0}, {4, 0}, {3, 1}, {2, 2}, {1, 3}, {0, 4}, {0, 5},  // 15
-    {1, 4}, {2, 3}, {3, 2}, {4, 1}, {5, 0}, {6, 0}, {5, 1}, {4, 2},  // 23
-    {3, 3}, {2, 4}, {1, 5}, {0, 6}, {0, 7}, {1, 6}, {2, 5}, {3, 4},  // 31
-    {4, 3}, {5, 2}, {6, 1}, {7, 0}, {1, 7}, {2, 6}, {3, 5}, {4, 4},  // 39
-    {5, 3}, {6, 2}, {7, 1}, {2, 7}, {3, 6}, {4, 5}, {5, 4}, {6, 3},  // 47
-    {7, 2}, {7, 3}, {6, 4}, {5, 5}, {4, 6}, {3, 7}, {4, 7}, {5, 6},  // 55
-    {6, 5}, {7, 4}, {7, 5}, {6, 6}, {5, 7}, {6, 7}, {7, 6}, {7, 7}   // 63
-};
 
 static void
 dct_process_macroblock(double q, quantization_matrix* restrict qm,
@@ -444,8 +435,8 @@ idct_process_macroblocks(double q, quantization_matrix* restrict qm, dct_file *d
 }
 
 void 
-pgm_from_dct(quantization_matrix* qm, pgm_file* restrict pg,
-             dct_file* restrict df) {
+dct_to_pgm(quantization_matrix* qm, pgm_file* restrict pg,
+           dct_file* restrict df) {
 
   pg->header.xsize = df->header.xsize;
   pg->header.ysize = df->header.ysize;
@@ -468,89 +459,6 @@ pgm_from_dct(quantization_matrix* qm, pgm_file* restrict pg,
   idct_process_macroblocks(q, qm, df, pg);
 }
 
-/*
-void
-idct_write_file(const char* dest, quantization_matrix* restrict qm, dct_file* df) { 
-  //dct_file df;
-  pgm_file  pf; 
-  //df.fp = fopen(dest, "w");
-  pf.fp = fopen(dest, "w"); 
-  if (!pf.fp) {
-    printf("Unable to open '%s'\n", dest);
-    exit(-1);
-  }
-  idct_write_header(&pf); 
 
-
-}
-*/
-
-void
-idct_write_header(pgm_file * pf) { 
-  fprintf(pf->fp, "%s", "P5\n"); 
-  fprintf(pf->fp, "%d %d\n", pf->header.xsize, pf->header.ysize); 
-  fprintf(pf->fp,  "%s", "255\n"); 
-}
-
-void
-idct_write_block(pgm_file* pf, block* block) {
-  for (uint32_t i = 0; i < (BLOCK_SIZE * BLOCK_SIZE); ++i) {
-    fprintf(pf->fp, " ");
-
-    // Use the order array to fine the next position for writing
-    uint32_t y = order[i][0];
-    uint32_t x = order[i][1];
-    fprintf(pf->fp, "%3d", block->bytes[y][x]);
-
-    // print a new line every 8 DCTs
-    if (i % 8 == 7) {
-      fprintf(pf->fp, "\n");
-    }
-  }
-}
-
-
-void
-idct_write_macroblock(pgm_file* pf, macroblock* macroblock, uint32_t mb_x, uint32_t mb_y){ 
-  for (uint32_t i = 0; i < 2; i++) {
-    for (uint32_t j = 0; j < 2; j++) {
-      fprintf(pf->fp, "%d %d\n", (mb_x * MACROBLOCK_SIZE + j * BLOCK_SIZE),
-              (mb_y * MACROBLOCK_SIZE + i * BLOCK_SIZE));
-      idct_write_block(pf, &macroblock->blocks[i][j]);
-    }
-  }
-}
-
-
-
-
-void
-idct_write_body(pgm_file * pf) { 
-  uint32_t xsize = pf->header.xsize;
-  uint32_t ysize = pf->header.ysize;
-  uint32_t rows = ysize / MACROBLOCK_SIZE;
-  uint32_t cols = xsize / MACROBLOCK_SIZE;
-  for (uint32_t i = 0; i < rows; i++) {
-    for (uint32_t j = 0; j < cols; j++) {
-      idct_write_macroblock(pf, &(pf->macroblocks[i][j]), i, j);
-    }
-  }
-}
-
-void
-idct_write_file(const char* dest, quantization_matrix* restrict qm, dct_file* df) { 
-  //dct_file df;
-  pgm_file  pf; 
-  //pgm_from_dct(quantization_matrix *qm, pgm_file *restrict pg, dct_file *restrict df)
-  pgm_from_dct(qm, &pf, df); 
-  //df.fp = fopen(dest, "w");
-  pf.fp = fopen(dest, "w"); 
-  if (!pf.fp) {
-    printf("Unable to open '%s'\n", dest);
-    exit(-1);
-  }
-  idct_write_header(&pf); 
-  idct_write_body(&pf); 
-}
 
 #endif
