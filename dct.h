@@ -257,7 +257,7 @@ dct_read_header(dct_file* df) {
     return -1;
   }
 
-  if (strcmp(buf, "MYDCT") != 0) {
+  if (strcmp(buf, "MYDCT\n") != 0) {
     return -1;
   }
 
@@ -388,7 +388,7 @@ idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b,
       for (uint32_t u = 0; u < BLOCK_SIZE; u++) {
         for (uint32_t v = 0; v < BLOCK_SIZE; v++) {
           int32_t ival = src_b->dcts[u][v];
-          ival += 127;  // Reset offset
+          ival -= 127;  // Reset offset
 
           // Need to multiply by quant value
           ival = ival * 4.0 * qm->quant_factor[u][v] * q;
@@ -495,12 +495,12 @@ idct_write_header(pgm_file * pf) {
 void
 idct_write_block(pgm_file* pf, block* block) {
   for (uint32_t i = 0; i < (BLOCK_SIZE * BLOCK_SIZE); ++i) {
-    fprintf(pf->fp, "  ");
+    fprintf(pf->fp, " ");
 
     // Use the order array to fine the next position for writing
     uint32_t y = order[i][0];
     uint32_t x = order[i][1];
-    fprintf(pf->fp, "%d", block->bytes[y][x]);
+    fprintf(pf->fp, "%3d", block->bytes[y][x]);
 
     // print a new line every 8 DCTs
     if (i % 8 == 7) {
