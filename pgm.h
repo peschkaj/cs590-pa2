@@ -198,58 +198,43 @@ pgm_read_file(FILE* restrict fp, pgm_file* restrict f) {
   return 0;
 }
 
-// void
-// pgm_write_block(pgm_file* pg, block* block) {
-//   for (uint32_t i = 0; i < (BLOCK_SIZE * BLOCK_SIZE); ++i) {
-//     fprintf(pg->fp, " ");
+void
+pgm_write_block(pgm_file* pg, block* block) {
+  for (uint32_t i = 0; i < (BLOCK_SIZE * BLOCK_SIZE); ++i) {
+    fprintf(pg->fp, " ");
 
-//     // Use the order array to fine the next position for writing
-//     uint32_t y = order[i][0];
-//     uint32_t x = order[i][1];
-//     fprintf(pg->fp, "%3d", block->bytes[y][x]);
+    // Use the order array to fine the next position for writing
+    uint32_t y = order[i][0];
+    uint32_t x = order[i][1];
+    fprintf(pg->fp, "%3d", block->bytes[y][x]);
 
-//     // print a new line every 8 DCTs
-//     if (i % 8 == 7) {
-//       fprintf(pg->fp, "\n");
-//     }
-//   }
-// }
+    // print a new line every 8 DCTs
+    if (i % 8 == 7) {
+      fprintf(pg->fp, "\n");
+    }
+  }
+}
 
-// void
-// pgm_write_macroblock(pgm_file* pg, macroblock* macroblock, uint32_t mb_x, uint32_t mb_y){ 
-//   for (uint32_t i = 0; i < 2; i++) {
-//     for (uint32_t j = 0; j < 2; j++) {
-//       fprintf(pg->fp, "%d %d\n", (mb_x * MACROBLOCK_SIZE + j * BLOCK_SIZE),
-//               (mb_y * MACROBLOCK_SIZE + i * BLOCK_SIZE));
-//       pgm_write_block(pg, &macroblock->blocks[i][j]);
-//     }
-//   }
-// }
+void
+pgm_write_macroblock(pgm_file* pg, macroblock* macroblock, uint32_t mb_x, uint32_t mb_y){ 
+  for (uint32_t i = 0; i < 2; i++) {
+    for (uint32_t j = 0; j < 2; j++) {
+      fprintf(pg->fp, "%d %d\n", (mb_x * MACROBLOCK_SIZE + j * BLOCK_SIZE),
+              (mb_y * MACROBLOCK_SIZE + i * BLOCK_SIZE));
+      pgm_write_block(pg, &macroblock->blocks[i][j]);
+    }
+  }
+}
 
 void
 pgm_write_body(pgm_file * pg) { 
   uint32_t xsize = pg->header.xsize;
   uint32_t ysize = pg->header.ysize;
-  macroblock* mb;
-  block *b;
-  
-  for (uint32_t y = 0; y < ysize; y++) {
-    // for each "line" of the output image
-
-    for (uint32_t x = 0; x < xsize; x++) {
-      // pick out the correct macroblock (which is just the current location)
-      uint32_t mb_row = y / MACROBLOCK_SIZE;
-      uint32_t mb_col = x / MACROBLOCK_SIZE;
-      mb = &pg->macroblocks[mb_row][mb_col];
-
-      // and find the right block in the macroblock
-      uint32_t b_row = (y % MACROBLOCK_SIZE) / BLOCK_SIZE;
-      uint32_t b_col = (x % MACROBLOCK_SIZE) / BLOCK_SIZE;
-      b = &mb->blocks[b_row][b_col];
-
-      uint32_t y_byte = (y % MACROBLOCK_SIZE) % BLOCK_SIZE;
-      uint32_t x_byte = (x % MACROBLOCK_SIZE) % BLOCK_SIZE;
-      fprintf(pg->fp, "%x", b->bytes[y_byte][x_byte] );
+  uint32_t rows = ysize / MACROBLOCK_SIZE;
+  uint32_t cols = xsize / MACROBLOCK_SIZE;
+  for (uint32_t i = 0; i < rows; i++) {
+    for (uint32_t j = 0; j < cols; j++) {
+      pgm_write_macroblock(pg, &(pg->macroblocks[i][j]), i, j);
     }
   }
 }
