@@ -150,12 +150,10 @@ static void
 dct_write_block(dct_file* df, dct_block* block) {
   // do some shit to write a block
   for (uint32_t i = 0; i < (BLOCK_SIZE * BLOCK_SIZE); ++i) {
-    fprintf(df->fp, "  ");
-
     // Use the order array to fine the next position for writing
     uint32_t y = order[i][0];
     uint32_t x = order[i][1];
-    fprintf(df->fp, "%d", block->dcts[y][x]);
+    fprintf(df->fp, "%5d", block->dcts[y][x]);
 
     // print a new line every 8 DCTs
     if (i % 8 == 7) {
@@ -356,18 +354,14 @@ idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b,
   for (uint32_t x = 0; x < BLOCK_SIZE; x++) {
     for (uint32_t y = 0; y < BLOCK_SIZE; y++) {
       double sum = 0.0;
-      // placing result value into src_b->block[x][y]
-
       for (uint32_t u = 0; u < BLOCK_SIZE; u++) {
         for (uint32_t v = 0; v < BLOCK_SIZE; v++) {
           int32_t ival = src_b->dcts[u][v];
           ival -= 127;  // Reset offset
 
           // Need to multiply by quant value
-          ival = ival * 4.0 * qm->quant_factor[u][v] * q;
-          // Do idct here now that we have reconstructed value?
-          // ival == F(u,v)
-
+          ival = ival * qm->quant_factor[u][v] * q;
+          // Do idct here now that we have reconstructed value
 
           // Getting Cu Cv values
           double cu = (u == 0) ? RECIP_ROOT_TWO : 1;
@@ -379,9 +373,8 @@ idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b,
         }
       }
 
-      sum = sum / 4;
-      double oval = clamp(sum, 255, 0);
-      dest_b->bytes[x][y] = round(oval);
+      sum *= 0.25;
+      dest_b->bytes[x][y] = clamp(round(sum), 255, 0);
     }
   }
 }

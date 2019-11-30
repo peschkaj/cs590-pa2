@@ -201,12 +201,11 @@ pgm_read_file(FILE* restrict fp, pgm_file* restrict f) {
 void
 pgm_write_block(pgm_file* pg, block* block) {
   for (uint32_t i = 0; i < (BLOCK_SIZE * BLOCK_SIZE); ++i) {
-    fprintf(pg->fp, " ");
 
     // Use the order array to fine the next position for writing
     uint32_t y = order[i][0];
     uint32_t x = order[i][1];
-    fprintf(pg->fp, "%3d", block->bytes[y][x]);
+    fprintf(pg->fp, "%5d", block->bytes[y][x]);
 
     // print a new line every 8 DCTs
     if (i % 8 == 7) {
