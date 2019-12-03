@@ -3,6 +3,7 @@
 #ifndef ORDER_H_
 #define ORDER_H_
 
+// Re-ordering array for DCT/ICT pre-computed
 const int order[64][2] = {
     {0, 0}, {0, 1}, {1, 0}, {2, 0}, {1, 1}, {0, 2}, {0, 3}, {2, 1},  //  7
     {1, 2}, {3, 0}, {4, 0}, {3, 1}, {2, 2}, {1, 3}, {0, 4}, {0, 5},  // 15

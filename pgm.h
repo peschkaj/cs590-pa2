@@ -76,6 +76,7 @@ pgm_read_header(FILE* restrict fp, pgm_file* restrict f) {
   return 0;
 }
 
+// Read a block from a PGM file into memory
 static void
 pgm_read_block(byte* restrict bytes, pgm_file* restrict f, block* restrict b,
                uint32_t mb_row, uint32_t mb_col, uint32_t b_row,
@@ -103,8 +104,6 @@ pgm_read_block(byte* restrict bytes, pgm_file* restrict f, block* restrict b,
   }
 }
 
-
-
 // Read a macroblock from
 //   an array of bytes
 //   into a macroblock
@@ -121,6 +120,8 @@ pgm_read_macroblock(byte* restrict bytes, pgm_file* restrict f, macroblock* rest
   }
 }
 
+// Convert an array of bytes from the body of a PGM file on disk into 
+// a `pgm_file` struct
 static void
 pgm_bytes_to_macroblock(byte* restrict bytes, pgm_file* restrict f) {
   uint32_t width = f->header.xsize;
@@ -147,6 +148,7 @@ pgm_bytes_to_macroblock(byte* restrict bytes, pgm_file* restrict f) {
   }
 }
 
+// Read the body of the PGM file from disk into a `pgm_file` struct
 static int
 pgm_read_body(FILE* restrict fp, pgm_file* restrict f) {
   // get current position in the file
@@ -185,6 +187,7 @@ pgm_read_body(FILE* restrict fp, pgm_file* restrict f) {
   return 0;
 }
 
+// Read a file into a `pgm_file` struct
 int
 pgm_read_file(FILE* restrict fp, pgm_file* restrict f) {
   if (pgm_read_header(fp, f) < 0) {
@@ -198,7 +201,8 @@ pgm_read_file(FILE* restrict fp, pgm_file* restrict f) {
   return 0;
 }
 
-void
+// Write a PGM file to disk
+static void
 pgm_write_block(pgm_file* pg, block* block) {
   for (uint32_t i = 0; i < (BLOCK_SIZE * BLOCK_SIZE); ++i) {
 
@@ -214,7 +218,8 @@ pgm_write_block(pgm_file* pg, block* block) {
   }
 }
 
-void
+// Write a PGM macroblock to disk, block-by-block
+static void
 pgm_write_macroblock(pgm_file* pg, macroblock* macroblock, uint32_t mb_x, uint32_t mb_y){ 
   for (uint32_t i = 0; i < 2; i++) {
     for (uint32_t j = 0; j < 2; j++) {
@@ -225,7 +230,8 @@ pgm_write_macroblock(pgm_file* pg, macroblock* macroblock, uint32_t mb_x, uint32
   }
 }
 
-void
+// Writes the PGM file body to disk
+static void
 pgm_write_body(pgm_file * pg) { 
   uint32_t xsize = pg->header.xsize;
   uint32_t ysize = pg->header.ysize;
@@ -238,13 +244,15 @@ pgm_write_body(pgm_file * pg) {
   }
 }
 
-void
+// Writes the PGM file header to disk.
+static void
 pgm_write_header(pgm_file * pg) { 
   fprintf(pg->fp, "%s", "P5\n"); 
   fprintf(pg->fp, "%d %d\n", pg->header.xsize, pg->header.ysize); 
   fprintf(pg->fp,  "%s", "255\n"); 
 }
 
+// Write a PGM file by first writing the header and then writing the body.
 void
 pgm_write_file(pgm_file* pg) { 
   pgm_write_header(pg); 

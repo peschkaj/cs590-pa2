@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Slurp an entire file into an array
 int
 read_file(const char* restrict source, unsigned char** restrict buf) {
   printf("Reading from %s\n", source);

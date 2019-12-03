@@ -37,8 +37,6 @@
 #define clamp(x, upper, lower) ({ x > 0 ? min(upper, x) : max(lower, x); })
 #define pi M_PI
 
-
-
 typedef struct {
   int32_t dcts[BLOCK_SIZE][BLOCK_SIZE];
 } dct_block;
@@ -59,7 +57,8 @@ typedef struct {
   dct_macroblock** macroblocks;
 } dct_file;
 
-
+// Process a single macroblock by applying the DCT algorithm to each of the
+// contained blocks.
 static void
 dct_process_macroblock(double q, quantization_matrix* restrict qm,
                        macroblock* src_mb, dct_macroblock* dest_mb) {
@@ -97,7 +96,7 @@ dct_process_macroblock(double q, quantization_matrix* restrict qm,
   }
 }
 
-
+// Process each macroblock block-by-block.
 static void
 dct_process_macroblocks(double q, quantization_matrix* restrict qm,
                         pgm_file* restrict pf, dct_file* restrict df) {
@@ -120,6 +119,8 @@ dct_process_macroblocks(double q, quantization_matrix* restrict qm,
   }
 }
 
+// Converts a PGM file to a DCT file.
+// For each macroblock in the file, we apply the DCT conversion block by block.
 void
 dct_from_pgm(double q, quantization_matrix* qm, pgm_file* restrict pg,
              dct_file* restrict df) {
@@ -146,6 +147,7 @@ dct_from_pgm(double q, quantization_matrix* qm, pgm_file* restrict pg,
   dct_process_macroblocks(q, qm, pg, df);
 }
 
+// Write a block to disk
 static void
 dct_write_block(dct_file* df, dct_block* block) {
   // do some shit to write a block
@@ -162,6 +164,8 @@ dct_write_block(dct_file* df, dct_block* block) {
   }
 }
 
+// Write a single macroblock to an output file by iterating over the
+// blocks contained in each macroblock
 static void
 dct_write_macroblock(dct_file* df, dct_macroblock* macroblock, uint32_t mb_x,
                      uint32_t mb_y) {
@@ -174,13 +178,15 @@ dct_write_macroblock(dct_file* df, dct_macroblock* macroblock, uint32_t mb_x,
   }
 }
 
+// Iterate over each macroblock in the image and write each macroblock to 
+// an output file.
 static void
 dct_write_body(dct_file* restrict df) {
-  // Apply the DCT function to each macro block or something
   uint32_t xsize = df->header.xsize;
   uint32_t ysize = df->header.ysize;
   uint32_t rows = ysize / MACROBLOCK_SIZE;
   uint32_t cols = xsize / MACROBLOCK_SIZE;
+
   for (uint32_t i = 0; i < rows; i++) {
     for (uint32_t j = 0; j < cols; j++) {
       dct_write_macroblock(df, &(df->macroblocks[i][j]), i, j);
@@ -188,6 +194,7 @@ dct_write_body(dct_file* restrict df) {
   }
 }
 
+// Write the header for a DCT'd file to disk.
 static void
 dct_write_header(dct_file* df) {
   fprintf(df->fp, "MYDCT\n");
@@ -195,6 +202,7 @@ dct_write_header(dct_file* df) {
   fprintf(df->fp, "%f\n", df->header.qvalue);
 }
 
+// Write a DCT file to disk by first converting a PGM file into a DCT file
 void
 dct_write_file(const char* dest, double q, quantization_matrix* restrict qm,
                pgm_file* restrict pg) {
@@ -347,7 +355,8 @@ dct_read_file(const char* src, dct_file* df) {
   return 0;
 }
 
-void
+// perform the IDCT process on a single block
+static void
 idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b,
                    block* dest_b) {
   // Iterating through the output block so we can inverse the compression
@@ -379,7 +388,8 @@ idct_process_block(double q, quantization_matrix* restrict qm, dct_block* src_b,
   }
 }
 
-void
+// Perform the IDCT process each individual macroblock 
+static void
 idct_process_macroblock(double q, quantization_matrix* restrict qm, dct_macroblock* src_mb, macroblock* dest_mb) {
   for (uint32_t i = 0; i < MACROBLOCK_ROWS; i++) {
     for (uint32_t j = 0; j < MACROBLOCK_COLS; j++) {
@@ -388,9 +398,10 @@ idct_process_macroblock(double q, quantization_matrix* restrict qm, dct_macroblo
 	    idct_process_block(q, qm, in_block, out_block);
     }
   }
-
 }
 
+// Perform the IDCT process on all macroblocks in the DCT file
+// and store the results in the PGM file
 static void
 idct_process_macroblocks(double q, quantization_matrix* restrict qm, dct_file *df, pgm_file * pf) {
   uint32_t width = pf->header.xsize;
@@ -409,6 +420,7 @@ idct_process_macroblocks(double q, quantization_matrix* restrict qm, dct_file *d
   }
 }
 
+// Convert a DCT file to a PGM file
 void 
 dct_to_pgm(quantization_matrix* qm, pgm_file* restrict pg,
            dct_file* restrict df) {
@@ -433,7 +445,4 @@ dct_to_pgm(quantization_matrix* qm, pgm_file* restrict pg,
   //run IDCT on each maroblock
   idct_process_macroblocks(q, qm, df, pg);
 }
-
-
-
 #endif
