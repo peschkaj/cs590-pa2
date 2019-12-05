@@ -1,3 +1,4 @@
+//Copyright (C) 2019 Jeremiah Peschka and Joel Lilja
 #pragma once
 
 #ifndef ORDER_H_
